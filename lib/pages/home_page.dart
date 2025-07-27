@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:habit_tracker/components/my_drawer.dart';
 import 'package:habit_tracker/components/my_habit_tile.dart';
+import 'package:habit_tracker/components/my_heat_map.dart';
 import 'package:provider/provider.dart';
 
 import '../model/habit.dart';
@@ -104,7 +105,12 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Theme.of(context).colorScheme.tertiary,
         child: Icon(Icons.add,color: Theme.of(context).colorScheme.inversePrimary,),
       ),
-      body: _buildHabitList(),
+      body: ListView(
+        children: [
+         _buildHeatMap(),
+          _buildHabitList()
+        ],
+      ),
     );
   }
 
@@ -114,6 +120,8 @@ class _HomePageState extends State<HomePage> {
     List<Habit> currentHabits = habitDatabase.currentHabits;
     return ListView.builder(
       itemCount: currentHabits.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemBuilder: (context, index) {
         final habit = currentHabits[index];
 
@@ -126,5 +134,23 @@ class _HomePageState extends State<HomePage> {
             deleteHabit: (context) => deleteHabit(habit),
             onChanged: (value)=> checkHabitOnOff(value,habit));
     },);
+  }
+
+  Widget _buildHeatMap() {
+    final habitDatabase = context.watch<HabitDatabase>();
+
+    List<Habit> currentHabits = habitDatabase.currentHabits;
+    
+    return FutureBuilder<DateTime?>(
+        future: habitDatabase.getFirstLaunchDate(),
+        builder: (context,snapshot){
+          if(snapshot.hasData) {
+            return MyHeatMap(startDate:snapshot.data!,
+                datasets: prepareHeatMapDataset(currentHabits));
+          } else {
+            return Container();
+          }
+        }
+    ) ;
   }
 }
